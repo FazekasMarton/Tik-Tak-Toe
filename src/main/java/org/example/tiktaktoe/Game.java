@@ -8,20 +8,46 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.layout.GridPane;
 import javafx.event.ActionEvent;
 
+import java.util.Random;
+
 public class Game {
     @FXML
     private GridPane board;
 
-    private Character[][] table = new Character[3][3];
-    private MI mi = new MI();
+    private Character[][] table;
+    private int round = 0;
+    private Boolean isPlayerWin;
+    private AI ai;
 
-    public void newGame() {
-        table = new Character[3][3];
+    @FXML
+    private void initialize() {
+        newGame();
     }
 
-    public void step(int row, int col, Character symbol) throws Exception {
+    private void newGame() {
+        for (Node node : board.getChildren()) {
+            if (node instanceof Button button) {
+                button.setText("");
+            }
+        }
+
+        table = new Character[3][3];
+        isPlayerWin = null;
+        round = 0;
+        Random rand = new Random();
+        if (rand.nextBoolean() && false) {
+            ai = new AI(true);
+            ai.step(null, null, table);
+        } else {
+            ai = new AI(false);
+        }
+    }
+
+    private void step(int row, int col, Character symbol) throws Exception {
         if (table[row][col] == null) {
             table[row][col] = symbol;
+            getButton(row, col).setText(symbol.toString());
+            round++;
         } else {
             throw new Exception("Cell already occupied!");
         }
@@ -90,57 +116,58 @@ public class Game {
         return false;
     }
 
-    private boolean isDraw() {
-        boolean draw = true;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (table[i][j] == null) {
-                    draw = false;
-                    break;
-                }
-            }
-        }
-        return draw;
-    }
-
     @FXML
     private void startNewGame() {
         newGame();
-        for (Node node : board.getChildren()) {
-            if (node instanceof Button button) {
-                button.setText("");
-            }
-        }
     }
 
     @FXML
     private void place(ActionEvent event) {
+        Button button = (Button) event.getSource();
+        int row = GridPane.getRowIndex(button);
+        int col = GridPane.getColumnIndex(button);
+        
         try {
-            Button button = (Button) event.getSource();
-            int row = GridPane.getRowIndex(button);
-            int col = GridPane.getColumnIndex(button);
-            step(row, col, 'x');
-            button.setText("x");
-            if (isWin(row, col)) {
-                showResultDialog("Nyertél!");
-                return;
-            }
+            playerPlace(row, col);
+            checkResult();
 
-            if(isDraw()) {
-                showResultDialog("Döntetlen!");
-                return;
+            if (round > 0) {
+                aiPlace(row, col);
+                ai.printNewMemorySlice();
+                checkResult();
             }
-
-            Move MIMove = mi.step(table);
-            step(MIMove.getRow(), MIMove.getCol(), 'o');
-            getButton(MIMove.getRow(), MIMove.getCol()).setText("o");
-            if (isWin(MIMove.row, MIMove.col)) {
-                showResultDialog("Vesztettél!");
-            }
-
-            if(isDraw()) showResultDialog("Döntetlen!");
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void playerPlace(int row, int col) throws Exception {
+        step(row, col, 'x');
+
+        if (isWin(row, col)) {
+            isPlayerWin = true;
+        }
+    }
+
+    private void aiPlace(int pRow, int pCol) throws Exception {
+        Move AIMove = ai.step(pRow, pCol, table);
+        step(AIMove.getRow(), AIMove.getCol(), 'o');
+
+        if (isWin(AIMove.row, AIMove.col)) {
+            isPlayerWin = false;
+        }
+    }
+
+    private void checkResult() {
+        if (isPlayerWin != null) {
+            if (isPlayerWin) {
+                showResultDialog("Nyertél!");
+            } else {
+                showResultDialog("Vesztettél!");
+            }
+        }
+        if (round >= 9) {
+            showResultDialog("Döntetlen!");
         }
     }
 
