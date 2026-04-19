@@ -17,7 +17,7 @@ public class Game {
     private Character[][] table;
     private int round = 0;
     private Boolean isPlayerWin;
-    private AI ai;
+    private AI ai = new AI();
 
     @FXML
     private void initialize() {
@@ -36,10 +36,10 @@ public class Game {
         round = 0;
         Random rand = new Random();
         if (rand.nextBoolean() && false) {
-            ai = new AI(true);
+            ai.newGame(true);
             ai.step(null, null, table);
         } else {
-            ai = new AI(false);
+            ai.newGame(false);
         }
     }
 
@@ -129,12 +129,13 @@ public class Game {
         
         try {
             playerPlace(row, col);
-            checkResult();
+            Move playerLastMove = new Move(row, col);
+            checkResult(playerLastMove);
 
             if (round > 0) {
                 aiPlace(row, col);
                 ai.printNewMemorySlice();
-                checkResult();
+                checkResult(playerLastMove);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,11 +159,13 @@ public class Game {
         }
     }
 
-    private void checkResult() {
+    private void checkResult(Move lastPlayerMove) {
         if (isPlayerWin != null) {
             if (isPlayerWin) {
+                ai.saveMemory(false, lastPlayerMove);
                 showResultDialog("Nyertél!");
             } else {
+                ai.saveMemory(true, lastPlayerMove);
                 showResultDialog("Vesztettél!");
             }
         }
