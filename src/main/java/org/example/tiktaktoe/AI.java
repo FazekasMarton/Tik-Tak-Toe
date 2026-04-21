@@ -8,6 +8,7 @@ public class AI {
     private MemorySlice newMemorySlice;
     private MemorySlice currentStep;
     private boolean started;
+    protected char symbol = 'o';
 
     public void newGame(boolean starter) {
         this.started = starter;
@@ -121,9 +122,9 @@ public class AI {
         }
     }
 
-    public void printMemory(){
+    public void printMemory() {
         System.out.println("First:");
-        for(MemorySlice slice : memory.getGoingFirst()){
+        for (MemorySlice slice : memory.getGoingFirst()) {
             if (slice != null) {
                 for (String string : slice.toStringArray()) {
                     System.out.println(string);
@@ -131,7 +132,7 @@ public class AI {
             }
         }
         System.out.println("Second:");
-        for(MemorySlice slice : memory.getGoingSecond()){
+        for (MemorySlice slice : memory.getGoingSecond()) {
             if (slice != null) {
                 for (String string : slice.toStringArray()) {
                     System.out.println(string);
@@ -140,18 +141,34 @@ public class AI {
         }
     }
 
-    public double getMemoryPercent() {
+    public long getMemorySize() {
         long collectedDatas = 0;
 
-        for(MemorySlice slice : memory.getGoingFirst()) {
+        for (MemorySlice slice : memory.getGoingFirst()) {
             collectedDatas += slice.toStringArray().size();
         }
         for (MemorySlice slice : memory.getGoingSecond()) {
             collectedDatas += slice.toStringArray().size();
         }
 
+        return collectedDatas;
+    }
+
+    public double getMemoryPercent() {
+        long collectedDatas = this.getMemorySize();
         long memory100 = 510336;
         double percent = (double) collectedDatas * 100 / (double) memory100;
         return Math.round(percent * 100.0) / 100.0;
+    }
+
+    public void setMemory(Memory memory) {
+        this.memory.setMemory(memory);
+    }
+
+    public AI getCloneAI() {
+        AI cloneAI = new AI();
+        cloneAI.setMemory(this.memory);
+        cloneAI.symbol = 'x';
+        return cloneAI;
     }
 }

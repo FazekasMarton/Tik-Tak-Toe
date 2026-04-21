@@ -11,6 +11,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.text.Text;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Game {
     @FXML
@@ -24,6 +25,7 @@ public class Game {
     private int round = 0;
     private Boolean isPlayerWin;
     private final AI ai = new AI();
+    private boolean selfLearner = false;
 
     @FXML
     private void initialize() {
@@ -31,6 +33,24 @@ public class Game {
     }
 
     private void newGame() {
+        this.resetBoard();
+        showMemory();
+        System.out.println("New Game");
+        ai.printMemory();
+        Random rand = new Random();
+        if (rand.nextBoolean()) {
+            try {
+                ai.newGame(true);
+                aiPlace(null, null, ai);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            ai.newGame(false);
+        }
+    }
+
+    private void resetBoard() {
         for (Node node : board.getChildren()) {
             if (node instanceof Button button) {
                 button.setText("");
@@ -40,24 +60,10 @@ public class Game {
         table = new Character[3][3];
         isPlayerWin = null;
         round = 0;
-        showMemory();
-        System.out.println("New Game");
-        ai.printMemory();
-        Random rand = new Random();
-        if (rand.nextBoolean() && false) {
-            try {
-                ai.newGame(true);
-                aiPlace(null, null);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            ai.newGame(false);
-        }
     }
 
     private void showMemory() {
-        percentText.setText(ai.getMemoryPercent() + "%");
+        percentText.setText(ai.getMemoryPercent() + "% (" + ai.getMemorySize() + ")");
     }
 
     private void step(int row, int col, Character symbol) throws Exception {
@@ -150,7 +156,7 @@ public class Game {
             boolean isEnd = checkResult(playerLastMove);
 
             if (!isEnd) {
-                aiPlace(row, col);
+                aiPlace(row, col, ai);
                 checkResult(playerLastMove);
             }
         } catch (Exception e) {
@@ -166,9 +172,9 @@ public class Game {
         }
     }
 
-    private void aiPlace(Integer pRow, Integer pCol) throws Exception {
-        Move AIMove = ai.step(pRow, pCol, table);
-        step(AIMove.getRow(), AIMove.getCol(), 'o');
+    private void aiPlace(Integer pRow, Integer pCol, AI aiInPlay) throws Exception {
+        Move AIMove = aiInPlay.step(pRow, pCol, table);
+        step(AIMove.getRow(), AIMove.getCol(), aiInPlay.symbol);
 
         if (isWin(AIMove.row, AIMove.col)) {
             isPlayerWin = false;
@@ -176,6 +182,7 @@ public class Game {
     }
 
     private boolean checkResult(Move lastPlayerMove) {
+        System.out.println("checkend");
         boolean isEnd = false;
         if (isPlayerWin != null) {
             if (isPlayerWin) {
@@ -229,5 +236,87 @@ public class Game {
             }
         }
         return null;
+    }
+
+    @FXML
+    private void selfTeach(ActionEvent event) {
+
+        selfLearner = !selfLearner;
+
+        for (Node node : board.getChildren()) {
+            if (node instanceof Button button) {
+                button.setDisable(selfLearner);
+            }
+        }
+
+        AI ai2 = ai.getCloneAI();
+
+        if (selfLearner) {
+
+            Thread t = new Thread(() -> {
+
+                while (selfLearner) {
+
+                    try {
+                        javafx.application.Platform.runLater(this::resetBoard);
+                        Thread.sleep(80);
+
+                        ai.newGame(true);
+                        ai2.newGame(false);
+
+                        AtomicBoolean isEnd = new AtomicBoolean(false);
+
+                        Integer lastRow = null;
+                        Integer lastCol = null;
+
+                        for (int i = 0; i < 9 && !isEnd.get() && selfLearner; i++) {
+
+                            AI current = (i % 2 == 0) ? ai : ai2;
+
+                            Move move = current.step(lastRow, lastCol, table);
+
+                            int r = move.getRow();
+                            int c = move.getCol();
+
+                            lastRow = r;
+                            lastCol = c;
+
+                            final Move finalMove = move;
+                            final AI finalCurrent = current;
+
+                            javafx.application.Platform.runLater(() -> {
+                                try {
+                                    step(r, c, finalCurrent.symbol);
+
+                                    boolean win = isWin(r, c);
+
+                                    if (win) {
+                                        if (finalCurrent == ai) {
+                                            ai.saveMemory(true, finalMove);
+                                        } else {
+                                            ai.saveMemory(false, finalMove);
+                                        }
+
+                                        showMemory();
+                                        isEnd.set(true);
+                                    }
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            });
+
+                            Thread.sleep(50);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            t.setDaemon(true);
+            t.start();
+        }
     }
 }

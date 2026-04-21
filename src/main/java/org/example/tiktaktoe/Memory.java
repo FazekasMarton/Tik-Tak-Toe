@@ -38,6 +38,17 @@ public class Memory {
         placeRoute(route, goingSecond);
     }
 
+    public void setMemory(Memory memory) {
+        this.goingFirst.clear();
+        for (MemorySlice slice : memory.getGoingFirst()) {
+            this.goingFirst.add(this.cloneSlice(slice));
+        }
+        this.goingSecond.clear();
+        for (MemorySlice slice : memory.getGoingSecond()) {
+            this.goingSecond.add(this.cloneSlice(slice));
+        }
+    }
+
     public void placeRoute(ArrayList<MemorySlice> newRoute, ArrayList<MemorySlice> root) {
         for (MemorySlice newSlice : newRoute) {
             MemorySlice existing = null;
