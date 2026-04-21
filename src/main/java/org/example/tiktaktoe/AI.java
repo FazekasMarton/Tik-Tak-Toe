@@ -60,11 +60,10 @@ public class AI {
                 }
             }
         }
-        System.out.println(rightMove);
         return rightMove;
     }
 
-    public Move randomMove(int pRow, int pCol, Character[][] table) {
+    public Move randomMove(Integer pRow, Integer pCol, Character[][] table) {
         Move randomMove = getRandomMove(table);
         if (currentStep == null && started) {
             newMemorySlice = new MemorySlice(randomMove);
@@ -115,12 +114,44 @@ public class AI {
     }
 
     public void printNewMemorySlice() {
-        System.out.println("|-----|Start|-----|");
         if (newMemorySlice != null) {
             for (String string : this.newMemorySlice.toStringArray()) {
                 System.out.println(string);
             }
         }
-        System.out.println("|------|End|------|");
+    }
+
+    public void printMemory(){
+        System.out.println("First:");
+        for(MemorySlice slice : memory.getGoingFirst()){
+            if (slice != null) {
+                for (String string : slice.toStringArray()) {
+                    System.out.println(string);
+                }
+            }
+        }
+        System.out.println("Second:");
+        for(MemorySlice slice : memory.getGoingSecond()){
+            if (slice != null) {
+                for (String string : slice.toStringArray()) {
+                    System.out.println(string);
+                }
+            }
+        }
+    }
+
+    public double getMemoryPercent() {
+        long collectedDatas = 0;
+
+        for(MemorySlice slice : memory.getGoingFirst()) {
+            collectedDatas += slice.toStringArray().size();
+        }
+        for (MemorySlice slice : memory.getGoingSecond()) {
+            collectedDatas += slice.toStringArray().size();
+        }
+
+        long memory100 = 510336;
+        double percent = (double) collectedDatas * 100 / (double) memory100;
+        return Math.round(percent * 100.0) / 100.0;
     }
 }

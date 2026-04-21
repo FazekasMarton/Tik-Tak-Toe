@@ -22,6 +22,12 @@ public class MemorySlice {
         nextMoves.add(next);
     }
 
+    public void print(){
+        for(String s : this.toStringArray()){
+            System.out.println(s);
+        }
+    }
+
     public ArrayList<String> toStringArray() {
         ArrayList<String> strings = new ArrayList<>();
 

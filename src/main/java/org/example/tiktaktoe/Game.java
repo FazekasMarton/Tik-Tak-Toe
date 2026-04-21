@@ -5,19 +5,25 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
 import javafx.event.ActionEvent;
+import javafx.scene.text.Text;
 
 import java.util.Random;
 
 public class Game {
     @FXML
     private GridPane board;
+    @FXML
+    private ProgressBar progressBar;
+    @FXML
+    private Text percentText;
 
     private Character[][] table;
     private int round = 0;
     private Boolean isPlayerWin;
-    private AI ai = new AI();
+    private final AI ai = new AI();
 
     @FXML
     private void initialize() {
@@ -34,13 +40,24 @@ public class Game {
         table = new Character[3][3];
         isPlayerWin = null;
         round = 0;
+        showMemory();
+        System.out.println("New Game");
+        ai.printMemory();
         Random rand = new Random();
-        if (rand.nextBoolean() && false) {
-            ai.newGame(true);
-            ai.step(null, null, table);
+        if (rand.nextBoolean()) {
+            try {
+                ai.newGame(true);
+                aiPlace(null, null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
             ai.newGame(false);
         }
+    }
+
+    private void showMemory() {
+        percentText.setText(ai.getMemoryPercent() + "%");
     }
 
     private void step(int row, int col, Character symbol) throws Exception {
@@ -126,15 +143,14 @@ public class Game {
         Button button = (Button) event.getSource();
         int row = GridPane.getRowIndex(button);
         int col = GridPane.getColumnIndex(button);
-        
+
         try {
             playerPlace(row, col);
             Move playerLastMove = new Move(row, col);
-            checkResult(playerLastMove);
+            boolean isEnd = checkResult(playerLastMove);
 
-            if (round > 0) {
+            if (!isEnd) {
                 aiPlace(row, col);
-                ai.printNewMemorySlice();
                 checkResult(playerLastMove);
             }
         } catch (Exception e) {
@@ -150,7 +166,7 @@ public class Game {
         }
     }
 
-    private void aiPlace(int pRow, int pCol) throws Exception {
+    private void aiPlace(Integer pRow, Integer pCol) throws Exception {
         Move AIMove = ai.step(pRow, pCol, table);
         step(AIMove.getRow(), AIMove.getCol(), 'o');
 
@@ -159,19 +175,24 @@ public class Game {
         }
     }
 
-    private void checkResult(Move lastPlayerMove) {
+    private boolean checkResult(Move lastPlayerMove) {
+        boolean isEnd = false;
         if (isPlayerWin != null) {
             if (isPlayerWin) {
                 ai.saveMemory(false, lastPlayerMove);
                 showResultDialog("Nyertél!");
+                isEnd = true;
             } else {
                 ai.saveMemory(true, lastPlayerMove);
                 showResultDialog("Vesztettél!");
+                isEnd = true;
             }
         }
         if (round >= 9) {
             showResultDialog("Döntetlen!");
+            isEnd = true;
         }
+        return isEnd;
     }
 
     private void showResultDialog(String message) {
