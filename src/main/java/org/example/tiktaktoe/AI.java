@@ -71,13 +71,13 @@ public class AI {
         } else if (currentStep == null) {
             newMemorySlice = new MemorySlice(new Move(pRow, pCol));
             newMemorySlice.addNext(new MemorySlice(randomMove));
-            currentStep = newMemorySlice.getNext().getFirst();
+            currentStep = newMemorySlice.getNext().getLast();
         } else {
             currentStep.addNext(new MemorySlice(new Move(pRow, pCol)));
-            currentStep = currentStep.getNext().getFirst();
+            currentStep = currentStep.getNext().getLast();
 
             currentStep.addNext(new MemorySlice(randomMove));
-            currentStep = currentStep.getNext().getFirst();
+            currentStep = currentStep.getNext().getLast();
         }
         return randomMove;
     }

@@ -44,7 +44,7 @@ public class Game {
         System.out.println("New Game");
         ai.printMemory();
         Random rand = new Random();
-        if (rand.nextBoolean()) {
+        if (rand.nextBoolean() && false) {
             try {
                 ai.newGame(true);
                 aiPlace(null, null);
